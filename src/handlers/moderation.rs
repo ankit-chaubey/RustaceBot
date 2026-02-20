@@ -17,7 +17,7 @@ use tgbotrs::{
     Bot, ChatId, ReplyMarkup,
 };
 
-use super::commands::{btn, edit_or_send};
+use super::commands::btn;
 
 // ── Warn store (in-memory, per chat:user) ────────────────────────────────────
 //   Resets on bot restart — good enough for most bots.

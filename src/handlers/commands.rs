@@ -897,14 +897,38 @@ pub async fn register_commands(bot: &Bot) -> Result<(), tgbotrs::BotError> {
         BotCommand { command: "kick".into(), description: "👢 Kick user (reply)".into() },
         BotCommand { command: "mute".into(), description: "🔇 Mute user (reply) [duration]".into() },
         BotCommand { command: "unmute".into(), description: "🔊 Unmute user (reply)".into() },
-        BotCommand { command: "warn".into(), description: "⚠️ Warn user (reply, 3=ban)".into() },
-        BotCommand { command: "unwarn".into(), description: "✅ Remove warning (reply)".into() },
+        BotCommand { command: "warn".into(), description: "⚠️ Warn user — 3 warns = auto-ban".into() },
+        BotCommand { command: "unwarn".into(), description: "✅ Remove a warning (reply)".into() },
         BotCommand { command: "warns".into(), description: "📋 Check warnings (reply)".into() },
-        BotCommand { command: "delete".into(), description: "🗑 Delete message (reply)".into() },
-        BotCommand { command: "pin".into(), description: "📌 Pin message (reply)".into() },
-        BotCommand { command: "unpin".into(), description: "📌 Unpin message".into() },
+        BotCommand { command: "delete".into(), description: "🗑 Delete replied message".into() },
+        BotCommand { command: "pin".into(), description: "📌 Pin replied message".into() },
+        BotCommand { command: "unpin".into(), description: "📌 Unpin current message".into() },
         BotCommand { command: "ro".into(), description: "🔇 Read-only mode ON".into() },
         BotCommand { command: "unro".into(), description: "🔊 Read-only mode OFF".into() },
+        // ── Admin ─────────────────────────────────────────────────────────────
+        BotCommand { command: "promote".into(), description: "⭐ Promote user [reply/id] [Title]".into() },
+        BotCommand { command: "demote".into(), description: "🔽 Demote user [reply/id]".into() },
+        BotCommand { command: "title".into(), description: "🏷️ Set admin title [reply/id] Title".into() },
+        BotCommand { command: "userinfo".into(), description: "👤 User info [reply/id/@user]".into() },
+        BotCommand { command: "whois".into(), description: "🔍 Same as /userinfo".into() },
+        // ── Filters ───────────────────────────────────────────────────────────
+        BotCommand { command: "filter".into(), description: "🔑 Add keyword auto-reply".into() },
+        BotCommand { command: "delfilter".into(), description: "🗑 Delete a filter".into() },
+        BotCommand { command: "filters".into(), description: "📋 List all active filters".into() },
+        // ── Notes ─────────────────────────────────────────────────────────────
+        BotCommand { command: "note".into(), description: "📝 Save a note".into() },
+        BotCommand { command: "get".into(), description: "📌 Get a saved note".into() },
+        BotCommand { command: "notes".into(), description: "📋 List all saved notes".into() },
+        BotCommand { command: "delnote".into(), description: "🗑 Delete a note".into() },
+        // ── Send / Post / Media ───────────────────────────────────────────────
+        BotCommand { command: "send".into(), description: "📨 Send message with inline buttons".into() },
+        BotCommand { command: "post".into(), description: "📢 Styled broadcast with buttons".into() },
+        BotCommand { command: "img".into(), description: "🖼 Send photo from URL".into() },
+        BotCommand { command: "vid".into(), description: "🎬 Send video from URL".into() },
+        BotCommand { command: "aud".into(), description: "🎵 Send audio from URL".into() },
+        BotCommand { command: "doc".into(), description: "📁 Send document from URL".into() },
+        BotCommand { command: "buttons".into(), description: "🎨 Colourful button showcase".into() },
+        BotCommand { command: "sendhelp".into(), description: "📡 /send and /post guide".into() },
     ];
 
     bot.set_my_commands(commands, None).await?;
