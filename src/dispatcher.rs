@@ -39,6 +39,9 @@ pub async fn dispatch(bot: Bot, update: tgbotrs::types::Update, stores: Stores) 
         let reply_user_id:   Option<i64>    = msg.reply_to_message.as_ref().and_then(|r| r.from.as_ref()).map(|u| u.id);
         let reply_user_name: Option<String> = msg.reply_to_message.as_ref().and_then(|r| r.from.as_ref()).map(|u| u.first_name.clone());
         let reply_msg_id:    Option<i64>    = msg.reply_to_message.as_ref().map(|r| r.message_id);
+        let chat_type       = msg.chat.r#type.as_str().to_owned(); // "private" | "group" | "supergroup" | "channel"
+        let is_private      = chat_type == "private";
+        let msg_date        = msg.date;
 
         if let Some(ref text) = msg.text {
             // ── Filters & Notes auto-triggers (before command parsing) ────────
@@ -137,6 +140,9 @@ pub async fn dispatch(bot: Bot, update: tgbotrs::types::Update, stores: Stores) 
                 "/buttons"  => broadcast::handle_buttons_showcase(&bot, chat_id).await,
                 "/sendhelp" => broadcast::handle_send_help(&bot, chat_id).await,
 
+                // ── Ping ──────────────────────────────────────────────────
+                "/ping" => handle_ping(&bot, chat_id, msg_date).await,
+
                 // ── System ────────────────────────────────────────────────
                 "/setcommands" => {
                     match register_commands(&bot).await {
@@ -158,22 +164,29 @@ pub async fn dispatch(bot: Bot, update: tgbotrs::types::Update, stores: Stores) 
                 }
 
                 // ── Unknown command ───────────────────────────────────────
+                // Stay silent in groups/supergroups to avoid spamming.
                 _ if command.starts_with('/') => {
-                    let kb = InlineKeyboardMarkup { inline_keyboard: vec![vec![
-                        InlineKeyboardButton { text: "📋 Menu".into(), callback_data: Some("main_menu".into()), ..Default::default() },
-                        InlineKeyboardButton { text: "📖 Help".into(), callback_data: Some("help_cb".into()), ..Default::default() },
-                    ]]};
-                    let p = SendMessageParams::new().parse_mode("HTML")
-                        .reply_markup(ReplyMarkup::InlineKeyboard(kb));
-                    let _ = bot.send_message(chat_id,
-                        format!("❓ Unknown: <code>{}</code>\n\nUse /help to see all commands.", command),
-                        Some(p)).await;
+                    if is_private {
+                        let kb = InlineKeyboardMarkup { inline_keyboard: vec![vec![
+                            InlineKeyboardButton { text: "📋 Menu".into(), callback_data: Some("main_menu".into()), ..Default::default() },
+                            InlineKeyboardButton { text: "📖 Help".into(), callback_data: Some("help_cb".into()), ..Default::default() },
+                        ]]};
+                        let p = SendMessageParams::new().parse_mode("HTML")
+                            .reply_markup(ReplyMarkup::InlineKeyboard(kb));
+                        let _ = bot.send_message(chat_id,
+                            format!("❓ Unknown command: <code>{}</code>\n\nUse /help to see all commands.", command),
+                            Some(p)).await;
+                    }
+                    // In groups: silently ignore unknown commands
                 }
 
-                // ── Plain text: check filters, then echo ──────────────────
+                // ── Plain text: check filters, then echo only in private ──
                 _ => {
                     if !filters::check_filters(&bot, chat_id, text, &stores.filter).await {
-                        handle_text_echo(&bot, chat_id, text, first_name).await;
+                        if is_private {
+                            handle_text_echo(&bot, chat_id, text, first_name).await;
+                        }
+                        // In groups: silently ignore unmatched plain text
                     }
                 }
             }

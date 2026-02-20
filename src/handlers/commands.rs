@@ -203,7 +203,8 @@ pub async fn handle_help(bot: &Bot, chat_id: i64) {
         /setcommands — Register bot commands\n\
         /deletecommands — Delete commands\n\
         /deletewebhook — Remove webhook\n\
-        /stats — Bot statistics\n\n\
+        /stats — Bot statistics\n\
+        /ping — Check bot latency 🏓\n\n\
         <i>Source: github.com/ankit-chaubey/RustaceBot</i>";
 
     let params = SendMessageParams::new()
@@ -310,6 +311,40 @@ const JOKES: &[&str] = &[
     "Why did the Rust program get promoted?\n\nBecause it had <b>no memory leaks</b> and excellent <b>ownership</b> skills! 📈",
     "Interviewer: 'Do you know C++?' \nRust dev: 'I used to, but then I <b>moved</b>.' 😎",
 ];
+
+// ── Ping ─────────────────────────────────────────────────────────────────────
+
+pub async fn handle_ping(bot: &Bot, chat_id: i64, msg_date: i64) {
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    // Message delay: difference between when Telegram stamped the message
+    // and when our bot started processing it (both in Unix seconds).
+    let now_secs = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0);
+    let msg_delay_ms = (now_secs - msg_date).max(0) * 1000;
+
+    // Send initial "measuring" message and time the round-trip.
+    let rtt_start = tokio::time::Instant::now();
+    let sent = bot.send_message(chat_id, "🏓 Pong! Measuring...", None).await;
+    let rtt_ms = rtt_start.elapsed().as_millis();
+
+    if let Ok(sent_msg) = sent {
+        let text = format!(
+            "🏓 <b>Pong!</b>\n\n\
+            ⚡ <b>API RTT:</b>    <code>{rtt_ms} ms</code>\n\
+            📨 <b>Msg Delay:</b>  <code>{msg_delay_ms} ms</code>\n\n\
+            <i>RTT = time for bot→Telegram→bot round-trip\n\
+            Delay = time message spent before bot processed it</i>"
+        );
+        let edit_params = tgbotrs::gen_methods::EditMessageTextParams::new()
+            .chat_id(tgbotrs::ChatId::from(chat_id))
+            .message_id(sent_msg.message_id)
+            .parse_mode("HTML");
+        let _ = bot.edit_message_text(&text, Some(edit_params)).await;
+    }
+}
 
 pub async fn handle_fact(bot: &Bot, chat_id: i64) {
     let fact = {
@@ -888,6 +923,7 @@ pub async fn register_commands(bot: &Bot) -> Result<(), tgbotrs::BotError> {
         BotCommand { command: "myprofile".into(), description: "👤 Profile photos".into() },
         BotCommand { command: "library".into(), description: "📚 Library overview".into() },
         BotCommand { command: "stats".into(), description: "📊 Bot statistics".into() },
+        BotCommand { command: "ping".into(),  description: "🏓 Check bot latency & response time".into() },
         BotCommand { command: "setcommands".into(), description: "⚙️ Register commands".into() },
         BotCommand { command: "deletecommands".into(), description: "🗑 Delete commands".into() },
         // ── Moderation ────────────────────────────────────────────────────────
