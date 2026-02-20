@@ -2,7 +2,6 @@
 //  Rustace Bot — Inline Query Handler
 // ════════════════════════════════════════════════════════════════
 
-use rand::Rng;
 use tgbotrs::{
     gen_methods::AnswerInlineQueryParams,
     types::{
@@ -14,11 +13,11 @@ use tgbotrs::{
 };
 
 fn article(id: &str, title: &str, description: &str, text: &str) -> InlineQueryResult {
-    InlineQueryResult::Article(InlineQueryResultArticle {
+    InlineQueryResult::InlineQueryResultArticle(InlineQueryResultArticle {
         r#type: "article".to_string(),
         id: id.to_string(),
         title: title.to_string(),
-        input_message_content: InputMessageContent::Text(InputTextMessageContent {
+        input_message_content: InputMessageContent::InputTextMessageContent(InputTextMessageContent {
             message_text: text.to_string(),
             parse_mode: Some("HTML".to_string()),
             entities: None,

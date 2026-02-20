@@ -20,8 +20,6 @@ use tgbotrs::{Bot, Poller, UpdateHandler};
 #[cfg(feature = "webhook")]
 use tgbotrs::WebhookServer;
 
-#[cfg(feature = "webhook")]
-
 #[tokio::main]
 async fn main() {
     // ── Load .env file ────────────────────────────────────────────────────────

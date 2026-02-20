@@ -2,6 +2,7 @@ use std::env;
 
 /// Bot runtime configuration loaded from environment / .env file.
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct Config {
     pub bot_token: String,
     pub mode: BotMode,
@@ -24,6 +25,7 @@ pub struct PollingConfig {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct WebhookConfig {
     pub url: String,
     pub port: u16,

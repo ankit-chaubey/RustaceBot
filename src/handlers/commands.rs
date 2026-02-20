@@ -5,16 +5,40 @@
 use rand::Rng;
 use tgbotrs::{
     gen_methods::{
-        GetUserProfilePhotosParams, SendAnimationParams, SendChatActionParams,
+        EditMessageTextParams, GetUserProfilePhotosParams, SendChatActionParams,
         SendContactParams, SendDiceParams, SendLocationParams,
-        SendMessageParams, SendPhotoParams, SendPollParams, SendVenueParams,
+        SendMessageParams, SendPollParams, SendVenueParams,
     },
     types::{
         BotCommand, InlineKeyboardButton, InlineKeyboardMarkup,
-        KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove,
+        InputPollOption,
     },
-    Bot, ReplyMarkup,
+    Bot, ChatId, ReplyMarkup,
 };
+
+// ── Edit-or-send helper ───────────────────────────────────────────────────────
+
+pub async fn edit_or_send(
+    bot: &Bot,
+    chat_id: i64,
+    message_id: Option<i64>,
+    text: &str,
+    kb: InlineKeyboardMarkup,
+) {
+    if let Some(mid) = message_id {
+        let params = EditMessageTextParams::new()
+            .chat_id(ChatId::from(chat_id))
+            .message_id(mid)
+            .parse_mode("HTML")
+            .reply_markup(kb);
+        let _ = bot.edit_message_text(text, Some(params)).await;
+    } else {
+        let p = SendMessageParams::new()
+            .parse_mode("HTML")
+            .reply_markup(ReplyMarkup::InlineKeyboard(kb));
+        let _ = bot.send_message(chat_id, text, Some(p)).await;
+    }
+}
 
 // ── Keyboard helpers ──────────────────────────────────────────────────────────
 
@@ -191,7 +215,7 @@ pub async fn handle_help(bot: &Bot, chat_id: i64) {
 
 // ── /about ────────────────────────────────────────────────────────────────────
 
-pub async fn handle_about(bot: &Bot, chat_id: i64) {
+pub async fn handle_about(bot: &Bot, chat_id: i64, message_id: Option<i64>) {
     let text = "🦀 <b>About Rustace Bot</b>\n\n\
         <b>Bot:</b> @RustaceBot (Rustace)\n\
         <b>Version:</b> 0.1.0\n\
@@ -219,23 +243,20 @@ pub async fn handle_about(bot: &Bot, chat_id: i64) {
         • <a href=\"https://crates.io/crates/tgbotrs\">crates.io/crates/tgbotrs</a>\n\
         • <a href=\"https://docs.rs/tgbotrs\">docs.rs/tgbotrs</a>";
 
-    let params = SendMessageParams::new()
-        .parse_mode("HTML")
-        .reply_markup(ReplyMarkup::InlineKeyboard(InlineKeyboardMarkup {
-            inline_keyboard: vec![
-                vec![
-                    link_btn("📦 crates.io", "https://crates.io/crates/tgbotrs"),
-                    link_btn("📖 docs.rs", "https://docs.rs/tgbotrs"),
-                ],
-                vec![
-                    link_btn("🐙 Library", "https://github.com/ankit-chaubey/tgbotrs"),
-                    link_btn("🤖 Bot Repo", "https://github.com/ankit-chaubey/RustaceBot"),
-                ],
-                vec![btn("⬅️ Main Menu", "main_menu")],
+    let kb = InlineKeyboardMarkup {
+        inline_keyboard: vec![
+            vec![
+                link_btn("📦 crates.io", "https://crates.io/crates/tgbotrs"),
+                link_btn("📖 docs.rs", "https://docs.rs/tgbotrs"),
             ],
-        }));
-
-    let _ = bot.send_message(chat_id, text, Some(params)).await;
+            vec![
+                link_btn("🐙 Library", "https://github.com/ankit-chaubey/tgbotrs"),
+                link_btn("🤖 Bot Repo", "https://github.com/ankit-chaubey/RustaceBot"),
+            ],
+            vec![btn("⬅️ Main Menu", "main_menu")],
+        ],
+    };
+    edit_or_send(bot, chat_id, message_id, text, kb).await;
 }
 
 // ── Dice variants ─────────────────────────────────────────────────────────────
@@ -291,8 +312,10 @@ const JOKES: &[&str] = &[
 ];
 
 pub async fn handle_fact(bot: &Bot, chat_id: i64) {
-    let mut rng = rand::thread_rng();
-    let fact = RUST_FACTS[rng.gen_range(0..RUST_FACTS.len())];
+    let fact = {
+        let mut rng = rand::thread_rng();
+        RUST_FACTS[rng.gen_range(0..RUST_FACTS.len())]
+    };
     let text = format!("💡 <b>Random Rust / tgbotrs Fact</b>\n\n{}", fact);
     let kb = InlineKeyboardMarkup {
         inline_keyboard: vec![vec![btn("💡 Another Fact", "fact"), btn("⬅️ Menu", "main_menu")]],
@@ -302,8 +325,10 @@ pub async fn handle_fact(bot: &Bot, chat_id: i64) {
 }
 
 pub async fn handle_joke(bot: &Bot, chat_id: i64) {
-    let mut rng = rand::thread_rng();
-    let joke = JOKES[rng.gen_range(0..JOKES.len())];
+    let joke = {
+        let mut rng = rand::thread_rng();
+        JOKES[rng.gen_range(0..JOKES.len())]
+    };
     let text = format!("😂 <b>Programmer Joke</b>\n\n{}", joke);
     let kb = InlineKeyboardMarkup {
         inline_keyboard: vec![vec![btn("😂 Another Joke", "joke"), btn("⬅️ Menu", "main_menu")]],
@@ -323,8 +348,10 @@ const EIGHT_BALL: &[&str] = &[
 ];
 
 pub async fn handle_magic8(bot: &Bot, chat_id: i64) {
-    let mut rng = rand::thread_rng();
-    let answer = EIGHT_BALL[rng.gen_range(0..EIGHT_BALL.len())];
+    let answer = {
+        let mut rng = rand::thread_rng();
+        EIGHT_BALL[rng.gen_range(0..EIGHT_BALL.len())]
+    };
     let text = format!("🔮 <b>Magic 8-Ball</b>\n\n<i>The spirits say...</i>\n\n<b>{}</b>", answer);
     let kb = InlineKeyboardMarkup {
         inline_keyboard: vec![vec![btn("🔮 Ask Again", "magic8"), btn("⬅️ Menu", "main_menu")]],
@@ -334,8 +361,10 @@ pub async fn handle_magic8(bot: &Bot, chat_id: i64) {
 }
 
 pub async fn handle_coinflip(bot: &Bot, chat_id: i64) {
-    let mut rng = rand::thread_rng();
-    let result = if rng.gen_bool(0.5) { "🪙 <b>HEADS!</b>" } else { "🪙 <b>TAILS!</b>" };
+    let result = {
+        let mut rng = rand::thread_rng();
+        if rng.gen_bool(0.5) { "🪙 <b>HEADS!</b>" } else { "🪙 <b>TAILS!</b>" }
+    };
     let kb = InlineKeyboardMarkup {
         inline_keyboard: vec![vec![btn("🪙 Flip Again", "coinflip"), btn("⬅️ Menu", "main_menu")]],
     };
@@ -453,11 +482,11 @@ pub async fn handle_poll(bot: &Bot, chat_id: i64) {
     let _ = bot.send_poll(chat_id,
         "🦀 What do you love most about Rust?",
         vec![
-            "🔒 Memory Safety".to_string(),
-            "⚡ Performance".to_string(),
-            "🦺 Type System".to_string(),
-            "📦 Cargo".to_string(),
-            "😊 Community".to_string(),
+            InputPollOption { text: "🔒 Memory Safety".to_string(), text_parse_mode: None, text_entities: None },
+            InputPollOption { text: "⚡ Performance".to_string(), text_parse_mode: None, text_entities: None },
+            InputPollOption { text: "🦺 Type System".to_string(), text_parse_mode: None, text_entities: None },
+            InputPollOption { text: "📦 Cargo".to_string(), text_parse_mode: None, text_entities: None },
+            InputPollOption { text: "😊 Community".to_string(), text_parse_mode: None, text_entities: None },
         ],
         Some(params)).await;
 
@@ -472,7 +501,7 @@ pub async fn handle_poll(bot: &Bot, chat_id: i64) {
 
 // ── /textstyles ───────────────────────────────────────────────────────────────
 
-pub async fn handle_text_styles(bot: &Bot, chat_id: i64) {
+pub async fn handle_text_styles(bot: &Bot, chat_id: i64, message_id: Option<i64>) {
     let text = "✨ <b>HTML Text Formatting Showcase</b>\n\n\
         <b>Bold text</b>\n\
         <i>Italic text</i>\n\
@@ -489,13 +518,12 @@ pub async fn handle_text_styles(bot: &Bot, chat_id: i64) {
     let kb = InlineKeyboardMarkup {
         inline_keyboard: vec![vec![btn("⬅️ Menu", "main_menu")]],
     };
-    let p = SendMessageParams::new().parse_mode("HTML").reply_markup(ReplyMarkup::InlineKeyboard(kb));
-    let _ = bot.send_message(chat_id, text, Some(p)).await;
+    edit_or_send(bot, chat_id, message_id, text, kb).await;
 }
 
 // ── /botinfo ──────────────────────────────────────────────────────────────────
 
-pub async fn handle_bot_info(bot: &Bot, chat_id: i64) {
+pub async fn handle_bot_info(bot: &Bot, chat_id: i64, message_id: Option<i64>) {
     match bot.get_me().await {
         Ok(me) => {
             let text = format!(
@@ -520,16 +548,17 @@ pub async fn handle_bot_info(bot: &Bot, chat_id: i64) {
             let kb = InlineKeyboardMarkup {
                 inline_keyboard: vec![vec![btn("⬅️ Menu", "main_menu")]],
             };
-            let p = SendMessageParams::new().parse_mode("HTML").reply_markup(ReplyMarkup::InlineKeyboard(kb));
-            let _ = bot.send_message(chat_id, text, Some(p)).await;
+            edit_or_send(bot, chat_id, message_id, &text, kb).await;
         }
-        Err(e) => { let _ = bot.send_message(chat_id, format!("❌ get_me failed: {}", e), None).await; }
+        Err(e) => {
+            edit_or_send(bot, chat_id, message_id, &format!("❌ get_me failed: {}", e), back_btn()).await;
+        }
     }
 }
 
 // ── Webhook info ──────────────────────────────────────────────────────────────
 
-pub async fn handle_webhook_info(bot: &Bot, chat_id: i64) {
+pub async fn handle_webhook_info(bot: &Bot, chat_id: i64, message_id: Option<i64>) {
     match bot.get_webhook_info().await {
         Ok(info) => {
             let text = format!(
@@ -550,16 +579,17 @@ pub async fn handle_webhook_info(bot: &Bot, chat_id: i64) {
             let kb = InlineKeyboardMarkup {
                 inline_keyboard: vec![vec![btn("⬅️ API Menu", "api_menu")]],
             };
-            let p = SendMessageParams::new().parse_mode("HTML").reply_markup(ReplyMarkup::InlineKeyboard(kb));
-            let _ = bot.send_message(chat_id, text, Some(p)).await;
+            edit_or_send(bot, chat_id, message_id, &text, kb).await;
         }
-        Err(e) => { let _ = bot.send_message(chat_id, format!("❌ Error: {}", e), None).await; }
+        Err(e) => {
+            edit_or_send(bot, chat_id, message_id, &format!("❌ Error: {}", e), back_btn()).await;
+        }
     }
 }
 
 // ── Member count ──────────────────────────────────────────────────────────────
 
-pub async fn handle_member_count(bot: &Bot, chat_id: i64) {
+pub async fn handle_member_count(bot: &Bot, chat_id: i64, message_id: Option<i64>) {
     match bot.get_chat_member_count(chat_id).await {
         Ok(count) => {
             let text = format!(
@@ -571,16 +601,17 @@ pub async fn handle_member_count(bot: &Bot, chat_id: i64) {
             let kb = InlineKeyboardMarkup {
                 inline_keyboard: vec![vec![btn("⬅️ API Menu", "api_menu")]],
             };
-            let p = SendMessageParams::new().parse_mode("HTML").reply_markup(ReplyMarkup::InlineKeyboard(kb));
-            let _ = bot.send_message(chat_id, text, Some(p)).await;
+            edit_or_send(bot, chat_id, message_id, &text, kb).await;
         }
-        Err(e) => { let _ = bot.send_message(chat_id, format!("❌ Error: {}", e), None).await; }
+        Err(e) => {
+            edit_or_send(bot, chat_id, message_id, &format!("❌ Error: {}", e), back_btn()).await;
+        }
     }
 }
 
 // ── Chat admins ───────────────────────────────────────────────────────────────
 
-pub async fn handle_admins(bot: &Bot, chat_id: i64) {
+pub async fn handle_admins(bot: &Bot, chat_id: i64, message_id: Option<i64>) {
     match bot.get_chat_administrators(chat_id).await {
         Ok(admins) => {
             let admin_list: Vec<String> = admins.iter().map(|a| {
@@ -600,22 +631,21 @@ pub async fn handle_admins(bot: &Bot, chat_id: i64) {
             let kb = InlineKeyboardMarkup {
                 inline_keyboard: vec![vec![btn("⬅️ API Menu", "api_menu")]],
             };
-            let p = SendMessageParams::new().parse_mode("HTML").reply_markup(ReplyMarkup::InlineKeyboard(kb));
-            let _ = bot.send_message(chat_id, text, Some(p)).await;
+            edit_or_send(bot, chat_id, message_id, &text, kb).await;
         }
         Err(e) => {
-            let p = SendMessageParams::new().parse_mode("HTML")
-                .reply_markup(ReplyMarkup::InlineKeyboard(back_btn()));
-            let _ = bot.send_message(chat_id,
-                format!("⚠️ <b>get_chat_administrators</b>\n\nOnly works in groups.\nError: {}", e),
-                Some(p)).await;
+            let kb = InlineKeyboardMarkup {
+                inline_keyboard: vec![vec![btn("⬅️ API Menu", "api_menu")]],
+            };
+            edit_or_send(bot, chat_id, message_id,
+                &format!("⚠️ <b>get_chat_administrators</b>\n\nOnly works in groups.\nError: {}", e), kb).await;
         }
     }
 }
 
 // ── Invite link ───────────────────────────────────────────────────────────────
 
-pub async fn handle_invite_link(bot: &Bot, chat_id: i64) {
+pub async fn handle_invite_link(bot: &Bot, chat_id: i64, message_id: Option<i64>) {
     match bot.export_chat_invite_link(chat_id).await {
         Ok(link) => {
             let text = format!(
@@ -629,22 +659,21 @@ pub async fn handle_invite_link(bot: &Bot, chat_id: i64) {
                     btn("⬅️ API Menu", "api_menu"),
                 ]],
             };
-            let p = SendMessageParams::new().parse_mode("HTML").reply_markup(ReplyMarkup::InlineKeyboard(kb));
-            let _ = bot.send_message(chat_id, text, Some(p)).await;
+            edit_or_send(bot, chat_id, message_id, &text, kb).await;
         }
         Err(e) => {
-            let p = SendMessageParams::new().parse_mode("HTML")
-                .reply_markup(ReplyMarkup::InlineKeyboard(back_btn()));
-            let _ = bot.send_message(chat_id,
-                format!("⚠️ Only works for groups/channels where bot is admin.\nError: {}", e),
-                Some(p)).await;
+            let kb = InlineKeyboardMarkup {
+                inline_keyboard: vec![vec![btn("⬅️ API Menu", "api_menu")]],
+            };
+            edit_or_send(bot, chat_id, message_id,
+                &format!("⚠️ Only works for groups/channels where bot is admin.\nError: {}", e), kb).await;
         }
     }
 }
 
 // ── My commands ───────────────────────────────────────────────────────────────
 
-pub async fn handle_my_commands(bot: &Bot, chat_id: i64) {
+pub async fn handle_my_commands(bot: &Bot, chat_id: i64, message_id: Option<i64>) {
     match bot.get_my_commands(None).await {
         Ok(cmds) => {
             let list: Vec<String> = cmds.iter()
@@ -659,10 +688,11 @@ pub async fn handle_my_commands(bot: &Bot, chat_id: i64) {
             let kb = InlineKeyboardMarkup {
                 inline_keyboard: vec![vec![btn("⬅️ API Menu", "api_menu")]],
             };
-            let p = SendMessageParams::new().parse_mode("HTML").reply_markup(ReplyMarkup::InlineKeyboard(kb));
-            let _ = bot.send_message(chat_id, text, Some(p)).await;
+            edit_or_send(bot, chat_id, message_id, &text, kb).await;
         }
-        Err(e) => { let _ = bot.send_message(chat_id, format!("❌ Error: {}", e), None).await; }
+        Err(e) => {
+            edit_or_send(bot, chat_id, message_id, &format!("❌ Error: {}", e), back_btn()).await;
+        }
     }
 }
 
@@ -692,7 +722,7 @@ pub async fn handle_my_profile(bot: &Bot, chat_id: i64, user_id: i64) {
 
 // ── Library info ──────────────────────────────────────────────────────────────
 
-pub async fn handle_library(bot: &Bot, chat_id: i64) {
+pub async fn handle_library(bot: &Bot, chat_id: i64, message_id: Option<i64>) {
     let text = "📚 <b>tgbotrs — Library Overview</b>\n\n\
         <b>✅ 165 Methods across 12 categories:</b>\n\n\
         <b>📨 Messaging (17)</b>\n\
@@ -737,54 +767,49 @@ pub async fn handle_library(bot: &Bot, chat_id: i64) {
             vec![btn("⬅️ Main Menu", "main_menu")],
         ],
     };
-    let p = SendMessageParams::new().parse_mode("HTML").reply_markup(ReplyMarkup::InlineKeyboard(kb));
-    let _ = bot.send_message(chat_id, text, Some(p)).await;
+    edit_or_send(bot, chat_id, message_id, text, kb).await;
 }
 
 // ── Media info cards ──────────────────────────────────────────────────────────
 
-pub async fn handle_audio_info(bot: &Bot, chat_id: i64) {
+pub async fn handle_audio_info(bot: &Bot, chat_id: i64, message_id: Option<i64>) {
     let text = "🎵 <b>send_audio</b>\n\n\
         Sends audio files (MP3, FLAC, OGG, M4A).\n\n\
         <b>Optional params:</b> caption, duration, performer, title, thumbnail\n\n\
         <pre>bot.send_audio(chat_id, file, Some(params)).await</pre>";
     let kb = InlineKeyboardMarkup { inline_keyboard: vec![vec![btn("⬅️ Media Menu", "media_menu")]] };
-    let p = SendMessageParams::new().parse_mode("HTML").reply_markup(ReplyMarkup::InlineKeyboard(kb));
-    let _ = bot.send_message(chat_id, text, Some(p)).await;
+    edit_or_send(bot, chat_id, message_id, text, kb).await;
 }
 
-pub async fn handle_video_info(bot: &Bot, chat_id: i64) {
+pub async fn handle_video_info(bot: &Bot, chat_id: i64, message_id: Option<i64>) {
     let text = "📹 <b>send_video</b>\n\n\
         Sends video files (MP4, MOV).\n\n\
         <b>Optional params:</b> duration, width, height, thumbnail, has_spoiler, supports_streaming\n\
         Also: <code>send_video_note()</code> for circular video messages\n\n\
         <pre>bot.send_video(chat_id, file, Some(params)).await</pre>";
     let kb = InlineKeyboardMarkup { inline_keyboard: vec![vec![btn("⬅️ Media Menu", "media_menu")]] };
-    let p = SendMessageParams::new().parse_mode("HTML").reply_markup(ReplyMarkup::InlineKeyboard(kb));
-    let _ = bot.send_message(chat_id, text, Some(p)).await;
+    edit_or_send(bot, chat_id, message_id, text, kb).await;
 }
 
-pub async fn handle_voice_info(bot: &Bot, chat_id: i64) {
+pub async fn handle_voice_info(bot: &Bot, chat_id: i64, message_id: Option<i64>) {
     let text = "🎤 <b>send_voice</b>\n\n\
         Sends voice messages (OGG/OPUS). Displays as waveform in Telegram.\n\n\
         <b>Optional params:</b> caption, duration\n\n\
         <pre>bot.send_voice(chat_id, ogg_file, Some(params)).await</pre>";
     let kb = InlineKeyboardMarkup { inline_keyboard: vec![vec![btn("⬅️ Media Menu", "media_menu")]] };
-    let p = SendMessageParams::new().parse_mode("HTML").reply_markup(ReplyMarkup::InlineKeyboard(kb));
-    let _ = bot.send_message(chat_id, text, Some(p)).await;
+    edit_or_send(bot, chat_id, message_id, text, kb).await;
 }
 
-pub async fn handle_doc_info(bot: &Bot, chat_id: i64) {
+pub async fn handle_doc_info(bot: &Bot, chat_id: i64, message_id: Option<i64>) {
     let text = "📁 <b>send_document</b>\n\n\
         Sends any file as a document (PDF, ZIP, source code, etc.).\n\n\
         <b>Optional params:</b> thumbnail, caption, disable_content_type_detection\n\n\
         <pre>bot.send_document(chat_id, file, Some(params)).await</pre>";
     let kb = InlineKeyboardMarkup { inline_keyboard: vec![vec![btn("⬅️ Media Menu", "media_menu")]] };
-    let p = SendMessageParams::new().parse_mode("HTML").reply_markup(ReplyMarkup::InlineKeyboard(kb));
-    let _ = bot.send_message(chat_id, text, Some(p)).await;
+    edit_or_send(bot, chat_id, message_id, text, kb).await;
 }
 
-pub async fn handle_sticker_info(bot: &Bot, chat_id: i64) {
+pub async fn handle_sticker_info(bot: &Bot, chat_id: i64, message_id: Option<i64>) {
     let text = "🎭 <b>Sticker API — 15 Methods</b>\n\n\
         <code>send_sticker</code> — Send sticker by file_id\n\
         <code>get_sticker_set</code> — Fetch sticker pack\n\
@@ -798,11 +823,10 @@ pub async fn handle_sticker_info(bot: &Bot, chat_id: i64) {
         <i>...and 6 more!</i>\n\n\
         <i>Sticker types: static, animated, video</i>";
     let kb = InlineKeyboardMarkup { inline_keyboard: vec![vec![btn("⬅️ Media Menu", "media_menu")]] };
-    let p = SendMessageParams::new().parse_mode("HTML").reply_markup(ReplyMarkup::InlineKeyboard(kb));
-    let _ = bot.send_message(chat_id, text, Some(p)).await;
+    edit_or_send(bot, chat_id, message_id, text, kb).await;
 }
 
-pub async fn handle_media_group_info(bot: &Bot, chat_id: i64) {
+pub async fn handle_media_group_info(bot: &Bot, chat_id: i64, message_id: Option<i64>) {
     let text = "📦 <b>send_media_group</b>\n\n\
         Sends 2–10 items as an album.\n\n\
         <b>InputMedia types:</b>\n\
@@ -813,11 +837,10 @@ pub async fn handle_media_group_info(bot: &Bot, chat_id: i64) {
         • <code>InputMedia::Animation</code>\n\n\
         <pre>bot.send_media_group(\n  chat_id,\n  vec![InputMedia::Photo(...)],\n  None\n).await</pre>";
     let kb = InlineKeyboardMarkup { inline_keyboard: vec![vec![btn("⬅️ Media Menu", "media_menu")]] };
-    let p = SendMessageParams::new().parse_mode("HTML").reply_markup(ReplyMarkup::InlineKeyboard(kb));
-    let _ = bot.send_message(chat_id, text, Some(p)).await;
+    edit_or_send(bot, chat_id, message_id, text, kb).await;
 }
 
-pub async fn handle_webapp_info(bot: &Bot, chat_id: i64) {
+pub async fn handle_webapp_info(bot: &Bot, chat_id: i64, message_id: Option<i64>) {
     let text = "🌐 <b>Web App Support</b>\n\n\
         tgbotrs supports Telegram Web Apps:\n\n\
         <b>Inline Button:</b>\n\
@@ -828,8 +851,7 @@ pub async fn handle_webapp_info(bot: &Bot, chat_id: i64) {
         <code>bot.save_prepared_inline_message(user_id, result, params)</code>\n\n\
         <i>Web apps open in an in-app browser within Telegram.</i>";
     let kb = InlineKeyboardMarkup { inline_keyboard: vec![vec![btn("⬅️ Tools", "tools_menu")]] };
-    let p = SendMessageParams::new().parse_mode("HTML").reply_markup(ReplyMarkup::InlineKeyboard(kb));
-    let _ = bot.send_message(chat_id, text, Some(p)).await;
+    edit_or_send(bot, chat_id, message_id, text, kb).await;
 }
 
 // ── Register commands ─────────────────────────────────────────────────────────

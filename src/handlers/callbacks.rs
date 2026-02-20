@@ -4,7 +4,7 @@
 // ════════════════════════════════════════════════════════════════
 
 use tgbotrs::{
-    gen_methods::{AnswerCallbackQueryParams, EditMessageTextParams, SendMessageParams},
+    gen_methods::{AnswerCallbackQueryParams, EditMessageTextParams},
     types::InlineKeyboardMarkup,
     Bot, ChatId, ReplyMarkup,
 };
@@ -36,17 +36,17 @@ pub async fn handle_callback(
 
         "about" => {
             ack(bot, &cq_id, None, false).await;
-            handle_about(bot, chat_id).await;
+            handle_about(bot, chat_id, Some(message_id)).await;
         }
 
         "library" => {
             ack(bot, &cq_id, None, false).await;
-            handle_library(bot, chat_id).await;
+            handle_library(bot, chat_id, Some(message_id)).await;
         }
 
         "stats_info" => {
             ack(bot, &cq_id, None, false).await;
-            handle_stats_info(bot, chat_id).await;
+            handle_stats_info(bot, chat_id, message_id).await;
         }
 
         // ── Fun Menu ────────────────────────────────────────────────────
@@ -76,15 +76,15 @@ pub async fn handle_callback(
                 api_menu(),
             ).await;
         }
-        "webhook_info" => { ack(bot, &cq_id, Some("📡 Fetching..."), false).await; handle_webhook_info(bot, chat_id).await; }
-        "bot_details" => { ack(bot, &cq_id, Some("🤖 Getting info..."), false).await; handle_bot_info(bot, chat_id).await; }
-        "botinfo"     => { ack(bot, &cq_id, Some("🤖 Getting info..."), false).await; handle_bot_info(bot, chat_id).await; }
-        "member_count" => { ack(bot, &cq_id, Some("👥 Counting..."), false).await; handle_member_count(bot, chat_id).await; }
-        "admins"      => { ack(bot, &cq_id, Some("👑 Fetching..."), false).await; handle_admins(bot, chat_id).await; }
-        "invite_link" => { ack(bot, &cq_id, Some("🔗 Generating..."), false).await; handle_invite_link(bot, chat_id).await; }
-        "my_commands" => { ack(bot, &cq_id, Some("📋 Fetching..."), false).await; handle_my_commands(bot, chat_id).await; }
+        "webhook_info" => { ack(bot, &cq_id, Some("📡 Fetching..."), false).await; handle_webhook_info(bot, chat_id, Some(message_id)).await; }
+        "bot_details" => { ack(bot, &cq_id, Some("🤖 Getting info..."), false).await; handle_bot_info(bot, chat_id, Some(message_id)).await; }
+        "botinfo"     => { ack(bot, &cq_id, Some("🤖 Getting info..."), false).await; handle_bot_info(bot, chat_id, Some(message_id)).await; }
+        "member_count" => { ack(bot, &cq_id, Some("👥 Counting..."), false).await; handle_member_count(bot, chat_id, Some(message_id)).await; }
+        "admins"      => { ack(bot, &cq_id, Some("👑 Fetching..."), false).await; handle_admins(bot, chat_id, Some(message_id)).await; }
+        "invite_link" => { ack(bot, &cq_id, Some("🔗 Generating..."), false).await; handle_invite_link(bot, chat_id, Some(message_id)).await; }
+        "my_commands" => { ack(bot, &cq_id, Some("📋 Fetching..."), false).await; handle_my_commands(bot, chat_id, Some(message_id)).await; }
         "my_profile"  => { ack(bot, &cq_id, Some("👤 Fetching..."), false).await; handle_my_profile(bot, chat_id, user_id).await; }
-        "stars"       => { ack(bot, &cq_id, Some("⭐ Checking..."), false).await; handle_star_balance(bot, chat_id).await; }
+        "stars"       => { ack(bot, &cq_id, Some("⭐ Checking..."), false).await; handle_star_balance(bot, chat_id, message_id).await; }
 
         // ── Tools Menu ──────────────────────────────────────────────────
         "tools_menu" => {
@@ -98,10 +98,10 @@ pub async fn handle_callback(
         "venue"      => { ack(bot, &cq_id, Some("🏢 Sending..."), false).await; handle_venue(bot, chat_id).await; }
         "contact"    => { ack(bot, &cq_id, Some("📞 Sending..."), false).await; handle_contact(bot, chat_id).await; }
         "poll"       => { ack(bot, &cq_id, Some("📊 Creating..."), false).await; handle_poll(bot, chat_id).await; }
-        "text_styles" => { ack(bot, &cq_id, None, false).await; handle_text_styles(bot, chat_id).await; }
-        "countdown"  => { ack(bot, &cq_id, None, false).await; handle_countdown_info(bot, chat_id).await; }
-        "checklist"  => { ack(bot, &cq_id, None, false).await; handle_checklist_info(bot, chat_id).await; }
-        "webapp_info" => { ack(bot, &cq_id, None, false).await; handle_webapp_info(bot, chat_id).await; }
+        "text_styles" => { ack(bot, &cq_id, None, false).await; handle_text_styles(bot, chat_id, Some(message_id)).await; }
+        "countdown"  => { ack(bot, &cq_id, None, false).await; handle_countdown_info(bot, chat_id, message_id).await; }
+        "checklist"  => { ack(bot, &cq_id, None, false).await; handle_checklist_info(bot, chat_id, message_id).await; }
+        "webapp_info" => { ack(bot, &cq_id, None, false).await; handle_webapp_info(bot, chat_id, Some(message_id)).await; }
 
         // ── Media Menu ──────────────────────────────────────────────────
         "media_menu" => {
@@ -113,12 +113,12 @@ pub async fn handle_callback(
         }
         "send_photo"      => { ack(bot, &cq_id, Some("🖼 Demo..."), false).await; handle_photo(bot, chat_id).await; }
         "send_animation"  => { ack(bot, &cq_id, Some("🎬 Demo..."), false).await; handle_animation(bot, chat_id).await; }
-        "audio_info"      => { ack(bot, &cq_id, None, false).await; handle_audio_info(bot, chat_id).await; }
-        "video_info"      => { ack(bot, &cq_id, None, false).await; handle_video_info(bot, chat_id).await; }
-        "voice_info"      => { ack(bot, &cq_id, None, false).await; handle_voice_info(bot, chat_id).await; }
-        "doc_info"        => { ack(bot, &cq_id, None, false).await; handle_doc_info(bot, chat_id).await; }
-        "sticker_info"    => { ack(bot, &cq_id, None, false).await; handle_sticker_info(bot, chat_id).await; }
-        "media_group_info" => { ack(bot, &cq_id, None, false).await; handle_media_group_info(bot, chat_id).await; }
+        "audio_info"      => { ack(bot, &cq_id, None, false).await; handle_audio_info(bot, chat_id, Some(message_id)).await; }
+        "video_info"      => { ack(bot, &cq_id, None, false).await; handle_video_info(bot, chat_id, Some(message_id)).await; }
+        "voice_info"      => { ack(bot, &cq_id, None, false).await; handle_voice_info(bot, chat_id, Some(message_id)).await; }
+        "doc_info"        => { ack(bot, &cq_id, None, false).await; handle_doc_info(bot, chat_id, Some(message_id)).await; }
+        "sticker_info"    => { ack(bot, &cq_id, None, false).await; handle_sticker_info(bot, chat_id, Some(message_id)).await; }
+        "media_group_info" => { ack(bot, &cq_id, None, false).await; handle_media_group_info(bot, chat_id, Some(message_id)).await; }
 
         // ── Alerts Demo ─────────────────────────────────────────────────
         "alerts_menu" => {
@@ -175,8 +175,9 @@ async fn edit_text(bot: &Bot, chat_id: i64, message_id: i64, text: &str, kb: Inl
 
 // ── Additional callback handlers ──────────────────────────────────────────────
 
-async fn handle_star_balance(bot: &Bot, chat_id: i64) {
+async fn handle_star_balance(bot: &Bot, chat_id: i64, message_id: i64) {
     use tgbotrs::types::InlineKeyboardButton;
+    use super::commands::edit_or_send;
     let (text, kb) = match bot.get_my_star_balance().await {
         Ok(bal) => (
             format!("⭐ <b>Bot Star Balance</b>\n\n\
@@ -193,12 +194,12 @@ async fn handle_star_balance(bot: &Bot, chat_id: i64) {
             ]] },
         ),
     };
-    let p = SendMessageParams::new().parse_mode("HTML").reply_markup(ReplyMarkup::InlineKeyboard(kb));
-    let _ = bot.send_message(chat_id, text, Some(p)).await;
+    edit_or_send(bot, chat_id, Some(message_id), &text, kb).await;
 }
 
-async fn handle_countdown_info(bot: &Bot, chat_id: i64) {
+async fn handle_countdown_info(bot: &Bot, chat_id: i64, message_id: i64) {
     use tgbotrs::types::InlineKeyboardButton;
+    use super::commands::edit_or_send;
     let text = "⏱️ <b>Live Location</b>\n\n\
         tgbotrs supports live location messages:\n\n\
         <code>send_location(chat_id, lat, lon, params)</code>\n\
@@ -211,12 +212,12 @@ async fn handle_countdown_info(bot: &Bot, chat_id: i64) {
     let kb = InlineKeyboardMarkup { inline_keyboard: vec![vec![
         InlineKeyboardButton { text: "⬅️ Tools".into(), callback_data: Some("tools_menu".into()), ..Default::default() }
     ]] };
-    let p = SendMessageParams::new().parse_mode("HTML").reply_markup(ReplyMarkup::InlineKeyboard(kb));
-    let _ = bot.send_message(chat_id, text, Some(p)).await;
+    edit_or_send(bot, chat_id, Some(message_id), text, kb).await;
 }
 
-async fn handle_checklist_info(bot: &Bot, chat_id: i64) {
+async fn handle_checklist_info(bot: &Bot, chat_id: i64, message_id: i64) {
     use tgbotrs::types::InlineKeyboardButton;
+    use super::commands::edit_or_send;
     let text = "🎯 <b>Checklist Messages</b>\n\n\
         New in Telegram Bot API 9.4!\n\n\
         <code>bot.send_checklist(chat_id, title, tasks, params)</code>\n\
@@ -228,12 +229,12 @@ async fn handle_checklist_info(bot: &Bot, chat_id: i64) {
     let kb = InlineKeyboardMarkup { inline_keyboard: vec![vec![
         InlineKeyboardButton { text: "⬅️ Tools".into(), callback_data: Some("tools_menu".into()), ..Default::default() }
     ]] };
-    let p = SendMessageParams::new().parse_mode("HTML").reply_markup(ReplyMarkup::InlineKeyboard(kb));
-    let _ = bot.send_message(chat_id, text, Some(p)).await;
+    edit_or_send(bot, chat_id, Some(message_id), text, kb).await;
 }
 
-async fn handle_stats_info(bot: &Bot, chat_id: i64) {
+async fn handle_stats_info(bot: &Bot, chat_id: i64, message_id: i64) {
     use tgbotrs::types::InlineKeyboardButton;
+    use super::commands::edit_or_send;
     let text = "📊 <b>Rustace Bot Statistics</b>\n\n\
         <b>Version:</b> 0.1.0\n\
         <b>Library:</b> tgbotrs v0.1.4\n\
@@ -253,6 +254,5 @@ async fn handle_stats_info(bot: &Bot, chat_id: i64) {
     let kb = InlineKeyboardMarkup { inline_keyboard: vec![vec![
         InlineKeyboardButton { text: "⬅️ Main Menu".into(), callback_data: Some("main_menu".into()), ..Default::default() }
     ]] };
-    let p = SendMessageParams::new().parse_mode("HTML").reply_markup(ReplyMarkup::InlineKeyboard(kb));
-    let _ = bot.send_message(chat_id, text, Some(p)).await;
+    edit_or_send(bot, chat_id, Some(message_id), text, kb).await;
 }
