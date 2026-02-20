@@ -890,6 +890,21 @@ pub async fn register_commands(bot: &Bot) -> Result<(), tgbotrs::BotError> {
         BotCommand { command: "stats".into(), description: "📊 Bot statistics".into() },
         BotCommand { command: "setcommands".into(), description: "⚙️ Register commands".into() },
         BotCommand { command: "deletecommands".into(), description: "🗑 Delete commands".into() },
+        // ── Moderation ────────────────────────────────────────────────────────
+        BotCommand { command: "modhelp".into(), description: "🛡️ Moderation help".into() },
+        BotCommand { command: "ban".into(), description: "🔨 Ban user (reply) [duration]".into() },
+        BotCommand { command: "unban".into(), description: "✅ Unban user (reply)".into() },
+        BotCommand { command: "kick".into(), description: "👢 Kick user (reply)".into() },
+        BotCommand { command: "mute".into(), description: "🔇 Mute user (reply) [duration]".into() },
+        BotCommand { command: "unmute".into(), description: "🔊 Unmute user (reply)".into() },
+        BotCommand { command: "warn".into(), description: "⚠️ Warn user (reply, 3=ban)".into() },
+        BotCommand { command: "unwarn".into(), description: "✅ Remove warning (reply)".into() },
+        BotCommand { command: "warns".into(), description: "📋 Check warnings (reply)".into() },
+        BotCommand { command: "delete".into(), description: "🗑 Delete message (reply)".into() },
+        BotCommand { command: "pin".into(), description: "📌 Pin message (reply)".into() },
+        BotCommand { command: "unpin".into(), description: "📌 Unpin message".into() },
+        BotCommand { command: "ro".into(), description: "🔇 Read-only mode ON".into() },
+        BotCommand { command: "unro".into(), description: "🔊 Read-only mode OFF".into() },
     ];
 
     bot.set_my_commands(commands, None).await?;

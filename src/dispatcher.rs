@@ -8,9 +8,14 @@ use tgbotrs::{
     Bot, ReplyMarkup,
 };
 
-use crate::handlers::{callbacks::handle_callback, commands::*, inline::handle_inline_query};
+use crate::handlers::{
+    callbacks::handle_callback,
+    commands::*,
+    inline::handle_inline_query,
+    moderation::{self, WarnStore},
+};
 
-pub async fn dispatch(bot: Bot, update: tgbotrs::types::Update) {
+pub async fn dispatch(bot: Bot, update: tgbotrs::types::Update, warn_store: WarnStore) {
     log::debug!("update_id={}", update.update_id);
 
     // ── Message ──────────────────────────────────────────────────────────────
@@ -18,10 +23,24 @@ pub async fn dispatch(bot: Bot, update: tgbotrs::types::Update) {
         let chat_id = msg.chat.id;
         let user_id = msg.from.as_ref().map(|u| u.id).unwrap_or(0);
         let first_name = msg.from.as_ref().map(|u| u.first_name.as_str()).unwrap_or("there");
+        let msg_id = msg.message_id;
+
+        // Extract reply-to user info for moderation commands
+        let reply_user_id   = msg.reply_to_message.as_ref()
+            .and_then(|r| r.from.as_ref())
+            .map(|u| u.id);
+        let reply_user_name: Option<String> = msg.reply_to_message.as_ref()
+            .and_then(|r| r.from.as_ref())
+            .map(|u| u.first_name.clone());
+        let reply_msg_id    = msg.reply_to_message.as_ref()
+            .map(|r| r.message_id);
 
         if let Some(ref text) = msg.text {
-            let command = text.split_whitespace().next().unwrap_or("");
-            let command = command.split('@').next().unwrap_or(command);
+            let mut parts = text.split_whitespace();
+            let command_raw = parts.next().unwrap_or("");
+            let command = command_raw.split('@').next().unwrap_or(command_raw);
+            let arg = parts.next(); // first word after command (used for duration)
+
             match command {
                 "/start" | "/menu" => handle_start(&bot, chat_id, first_name).await,
                 "/help" => handle_help(&bot, chat_id).await,
@@ -70,6 +89,64 @@ pub async fn dispatch(bot: Bot, update: tgbotrs::types::Update) {
                         Err(e) => { let _ = bot.send_message(chat_id, format!("❌ Error: {}", e), None).await; }
                     }
                 }
+
+                // ── Moderation ──────────────────────────────────────────
+                "/ban" => moderation::handle_ban(
+                    &bot, chat_id,
+                    reply_user_id,
+                    reply_user_name.as_deref(),
+                    arg,
+                ).await,
+                "/unban" => moderation::handle_unban(
+                    &bot, chat_id,
+                    reply_user_id,
+                    reply_user_name.as_deref(),
+                ).await,
+                "/kick" => moderation::handle_kick(
+                    &bot, chat_id,
+                    reply_user_id,
+                    reply_user_name.as_deref(),
+                ).await,
+                "/mute" => moderation::handle_mute(
+                    &bot, chat_id,
+                    reply_user_id,
+                    reply_user_name.as_deref(),
+                    arg,
+                ).await,
+                "/unmute" => moderation::handle_unmute(
+                    &bot, chat_id,
+                    reply_user_id,
+                    reply_user_name.as_deref(),
+                ).await,
+                "/warn" => moderation::handle_warn(
+                    &bot, chat_id,
+                    reply_user_id,
+                    reply_user_name.as_deref(),
+                    &warn_store,
+                ).await,
+                "/unwarn" => moderation::handle_unwarn(
+                    &bot, chat_id,
+                    reply_user_id,
+                    reply_user_name.as_deref(),
+                    &warn_store,
+                ).await,
+                "/warns" => moderation::handle_warns(
+                    &bot, chat_id,
+                    reply_user_id,
+                    reply_user_name.as_deref(),
+                    &warn_store,
+                ).await,
+                "/delete" | "/del" => moderation::handle_delete(
+                    &bot, chat_id,
+                    reply_msg_id,
+                    msg_id,
+                ).await,
+                "/pin" => moderation::handle_pin(&bot, chat_id, reply_msg_id).await,
+                "/unpin" => moderation::handle_unpin(&bot, chat_id).await,
+                "/ro" => moderation::handle_ro(&bot, chat_id).await,
+                "/unro" => moderation::handle_unro(&bot, chat_id).await,
+                "/modhelp" => moderation::handle_mod_help(&bot, chat_id).await,
+
                 _ if command.starts_with('/') => {
                     let kb = InlineKeyboardMarkup {
                         inline_keyboard: vec![vec![InlineKeyboardButton {

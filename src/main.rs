@@ -14,6 +14,7 @@ mod handlers;
 
 use config::{BotMode, Config};
 use dispatcher::dispatch;
+use handlers::moderation::new_warn_store;
 
 use tgbotrs::{Bot, Poller, UpdateHandler};
 
@@ -72,9 +73,11 @@ async fn main() {
     }
 
     // ── Build update handler ──────────────────────────────────────────────────
-    let handler: UpdateHandler = Box::new(|bot, update| {
+    let warn_store = new_warn_store();
+    let handler: UpdateHandler = Box::new(move |bot, update| {
+        let ws = warn_store.clone();
         Box::pin(async move {
-            dispatch(bot, update).await;
+            dispatch(bot, update, ws).await;
         })
     });
 
