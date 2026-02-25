@@ -191,45 +191,55 @@ pub async fn dispatch(bot: Bot, update: tgbotrs::types::Update, stores: Stores) 
                 }
             }
 
-        // ── Non-text messages ─────────────────────────────────────────────────
+        // ── Non-text messages (only auto-respond in private/DM chats) ─────────
         } else if let Some(sticker) = msg.sticker {
-            let p = SendMessageParams::new().parse_mode("HTML");
-            let _ = bot.send_message(chat_id, format!(
-                "🎭 <b>Sticker!</b>\n\n<b>File ID:</b> <code>{}</code>\n<b>Set:</b> {}\n<b>Emoji:</b> {}\n\n<i>Use with <code>bot.send_sticker()</code></i>",
-                sticker.file_id,
-                sticker.set_name.as_deref().unwrap_or("Unknown"),
-                sticker.emoji.as_deref().unwrap_or("—"),
-            ), Some(p)).await;
-        } else if let Some(photos) = msg.photo {
-            if let Some(p) = photos.last() {
-                let pm = SendMessageParams::new().parse_mode("HTML");
+            if is_private {
+                let p = SendMessageParams::new().parse_mode("HTML");
                 let _ = bot.send_message(chat_id, format!(
-                    "📸 <b>Photo!</b>\n\n<b>File ID:</b> <code>{}</code>\n<b>Size:</b> {}×{}\n\n<i>Use with <code>bot.send_photo()</code></i>",
-                    p.file_id, p.width, p.height,
-                ), Some(pm)).await;
+                    "🎭 <b>Sticker!</b>\n\n<b>File ID:</b> <code>{}</code>\n<b>Set:</b> {}\n<b>Emoji:</b> {}\n\n<i>Use with <code>bot.send_sticker()</code></i>",
+                    sticker.file_id,
+                    sticker.set_name.as_deref().unwrap_or("Unknown"),
+                    sticker.emoji.as_deref().unwrap_or("—"),
+                ), Some(p)).await;
+            }
+        } else if let Some(photos) = msg.photo {
+            if is_private {
+                if let Some(p) = photos.last() {
+                    let pm = SendMessageParams::new().parse_mode("HTML");
+                    let _ = bot.send_message(chat_id, format!(
+                        "📸 <b>Photo!</b>\n\n<b>File ID:</b> <code>{}</code>\n<b>Size:</b> {}×{}\n\n<i>Use with <code>bot.send_photo()</code></i>",
+                        p.file_id, p.width, p.height,
+                    ), Some(pm)).await;
+                }
             }
         } else if let Some(doc) = msg.document {
-            let p = SendMessageParams::new().parse_mode("HTML");
-            let _ = bot.send_message(chat_id, format!(
-                "📁 <b>Document!</b>\n\n<b>Name:</b> {}\n<b>File ID:</b> <code>{}</code>\n<b>MIME:</b> {}\n\n<i>Use <code>bot.get_file(file_id)</code> to download.</i>",
-                doc.file_name.as_deref().unwrap_or("Unknown"),
-                doc.file_id,
-                doc.mime_type.as_deref().unwrap_or("Unknown"),
-            ), Some(p)).await;
+            if is_private {
+                let p = SendMessageParams::new().parse_mode("HTML");
+                let _ = bot.send_message(chat_id, format!(
+                    "📁 <b>Document!</b>\n\n<b>Name:</b> {}\n<b>File ID:</b> <code>{}</code>\n<b>MIME:</b> {}\n\n<i>Use <code>bot.get_file(file_id)</code> to download.</i>",
+                    doc.file_name.as_deref().unwrap_or("Unknown"),
+                    doc.file_id,
+                    doc.mime_type.as_deref().unwrap_or("Unknown"),
+                ), Some(p)).await;
+            }
         } else if let Some(loc) = msg.location {
-            let p = SendMessageParams::new().parse_mode("HTML");
-            let _ = bot.send_message(chat_id, format!(
-                "📍 <b>Location!</b>\n\n<b>Lat:</b> {}\n<b>Lon:</b> {}\n\n<code>bot.send_location(chat_id, {}, {}, None)</code>",
-                loc.latitude, loc.longitude, loc.latitude, loc.longitude,
-            ), Some(p)).await;
+            if is_private {
+                let p = SendMessageParams::new().parse_mode("HTML");
+                let _ = bot.send_message(chat_id, format!(
+                    "📍 <b>Location!</b>\n\n<b>Lat:</b> {}\n<b>Lon:</b> {}\n\n<code>bot.send_location(chat_id, {}, {}, None)</code>",
+                    loc.latitude, loc.longitude, loc.latitude, loc.longitude,
+                ), Some(p)).await;
+            }
         } else if let Some(contact) = msg.contact {
-            let p = SendMessageParams::new().parse_mode("HTML");
-            let _ = bot.send_message(chat_id, format!(
-                "📞 <b>Contact!</b>\n\n<b>Name:</b> {} {}\n<b>Phone:</b> <code>{}</code>",
-                contact.first_name,
-                contact.last_name.as_deref().unwrap_or(""),
-                contact.phone_number,
-            ), Some(p)).await;
+            if is_private {
+                let p = SendMessageParams::new().parse_mode("HTML");
+                let _ = bot.send_message(chat_id, format!(
+                    "📞 <b>Contact!</b>\n\n<b>Name:</b> {} {}\n<b>Phone:</b> <code>{}</code>",
+                    contact.first_name,
+                    contact.last_name.as_deref().unwrap_or(""),
+                    contact.phone_number,
+                ), Some(p)).await;
+            }
         }
         return;
     }
